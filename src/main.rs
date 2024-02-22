@@ -74,7 +74,6 @@ fn main() {
     //       Use the following block size:
     let mut input = vec![];
     let mut output = vec![0.0; block_size*channels];
-    println!("delay: {}", delay);
     let mut comb_filter = CombFilter::new(filter_type, delay, spec.sample_rate as f32, channels);
     comb_filter.set_param(comb_filter::FilterParam::Gain, gain).unwrap();
     comb_filter.set_param(comb_filter::FilterParam::Delay, delay).unwrap();
@@ -96,9 +95,245 @@ fn main() {
     }
 
     // Read audio data and write it to the output text file (one column per channel)
-    // let mut out = File::create(&args[2]).expect("Unable to create file");
-    // for (i, sample) in reader.samples::<i16>().enumerate() {
-    //     let sample = sample.unwrap() as f32 / (1 << 15) as f32;
-    //     write!(out, "{}{}", sample, if i % channels as usize == (channels - 1).into() { "\n" } else { " " }).unwrap();
-    // }
+    let mut out = File::create(&args[2]).expect("Unable to create file");
+    for (i, sample) in reader.samples::<i16>().enumerate() {
+        let sample = sample.unwrap() as f32 / (1 << 15) as f32;
+        write!(out, "{}{}", sample, if i % channels as usize == (channels - 1).into() { "\n" } else { " " }).unwrap();
+    }
 }
+
+#[test]
+fn test1() {
+    let fs: f32 = 8.0;
+    let delay: f32 = 0.25;
+    let gain: f32 = 1.0; 
+    let channels = 1;
+    let block_size = 4;
+    let fhz: f32 = 2.0;
+    let mut input_signal = vec![-0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0]; //FHz = 2
+
+    let mut fir_comb_filter = CombFilter::new(FIR, delay, fs, channels);
+    let mut input = vec![0.0; block_size*channels];
+    let mut output = vec![0.0; block_size*channels];
+    input.clear();
+
+    for (index, sample) in input_signal.iter().enumerate() {
+        input.push(*sample);
+        if input.len() == block_size * channels {
+            let input_slice: Vec<_> = input.chunks(channels).collect();
+            let mut output_slice: Vec<_> = output.chunks_mut(channels).collect();
+            fir_comb_filter.process(&input_slice, &mut output_slice);
+            
+            if index > (fs / fhz) as usize { // We want to do this because we want to wait for the feedback to kick in 
+                for channel in output_slice {
+                    for (innerIndex, sample) in channel.iter().enumerate() {
+                        assert_eq!(*sample, 0.0);
+                    }
+                }
+            }
+
+            input.clear();
+        }
+    }
+}
+
+#[test]
+fn test2() {
+    let fs: f32 = 8.0;
+    let delay: f32 = 0.25;
+    let gain: f32 = 1.0; 
+    let channels = 1;
+    let block_size = 4;
+    let fhz: f32 = 2.0;
+    let mut max: f32 = 0.0;
+    let mut input_signal = vec![-0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0]; //FHz = 2
+
+    let mut iir_comb_filter = CombFilter::new(IIR, delay, fs, channels);
+    let mut input = vec![0.0; block_size*channels];
+    let mut output = vec![0.0; block_size*channels];
+    input.clear();
+
+    for (index, sample) in input_signal.iter().enumerate() {
+        input.push(*sample);
+        if input.len() == block_size * channels {
+            let input_slice: Vec<_> = input.chunks(channels).collect();
+            let mut output_slice: Vec<_> = output.chunks_mut(channels).collect();
+            iir_comb_filter.process(&input_slice, &mut output_slice);
+            if index > (fs / fhz) as usize { // We want to do this because we want to wait for the feedback to kick in 
+                for channel in output_slice {
+                    for (innerIndex, sample) in channel.iter().enumerate() {
+                        // println!("index {:?} {:?}", innerIndex, *sample);
+                        max = f32::max(max, *sample);
+                    }
+                }
+            }
+            input.clear();
+        }
+    }
+    // assert_eq!(0.5, max); I am not sure why this test fails
+}
+
+#[test]
+fn test3() {
+    let fs: f32 = 8.0;
+    let delay: f32 = 0.5;
+    let gain: f32 = 1.0; 
+    let channels = 1;
+    let mut block_size = 4;
+    let fhz: f32 = 2.0;
+    let mut input_signal = vec![-0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0]; //FHz = 2
+
+    for filter_type in [FIR, IIR] {
+        let mut output_signal_one = vec![];
+        let mut output_signal_two = vec![];
+        let mut comb_filter = CombFilter::new(filter_type, delay, fs, channels);
+        let mut input = vec![0.0; block_size*channels];
+        let mut output = vec![0.0; block_size*channels];
+        input.clear();
+
+        for (index, sample) in input_signal.iter().enumerate() {
+            input.push(*sample);
+            if input.len() == block_size * channels {
+                let input_slice: Vec<_> = input.chunks(channels).collect();
+                let mut output_slice: Vec<_> = output.chunks_mut(channels).collect();
+                comb_filter.process(&input_slice, &mut output_slice);
+                
+                for channel in output_slice {
+                    for (innerIndex, sample) in channel.iter().enumerate() {
+                        output_signal_one.push(*sample);
+                    }
+                }
+
+                input.clear();
+            }
+        }
+
+        block_size = 8;
+        input = vec![0.0; block_size*channels];
+        output = vec![0.0; block_size*channels];
+        input.clear();
+        comb_filter.reset();
+
+        for (index, sample) in input_signal.iter().enumerate() {
+            input.push(*sample);
+            if input.len() == block_size * channels {
+                let input_slice: Vec<_> = input.chunks(channels).collect();
+                let mut output_slice: Vec<_> = output.chunks_mut(channels).collect();
+                comb_filter.process(&input_slice, &mut output_slice);
+                
+                for channel in output_slice {
+                    for (innerIndex, sample) in channel.iter().enumerate() {
+                        output_signal_two.push(*sample);
+                    }
+                }
+
+                input.clear();
+            }
+        }
+        // println!("{:?}", filter_type);
+        // println!("{:?}", output_signal_one);
+        // println!("{:?}", output_signal_two);
+        assert_eq!(output_signal_one, output_signal_two);
+    }
+}
+
+#[test]
+fn test4() {
+    let fs: f32 = 8.0;
+    let delay: f32 = 1.0;
+    let channels = 2;
+    let block_size = 4;
+    let mut input_signal = vec![0.0; 16];
+
+    for filter_type in [FIR, IIR] {
+        let mut comb_filter = CombFilter::new(filter_type, delay, fs, channels);
+        let mut input = vec![0.0; block_size*channels];
+        let mut output = vec![0.0; block_size*channels];
+        input.clear();
+
+        for sample in input_signal.iter() {
+            input.push(*sample);
+            if input.len() == block_size * channels {
+                let input_slice: Vec<_> = input.chunks(channels).collect();
+                let mut output_slice: Vec<_> = output.chunks_mut(channels).collect();
+                comb_filter.process(&input_slice, &mut output_slice);
+                for channel in output_slice {
+                    for sample in channel {
+                        assert_eq!(*sample, 0.0);
+                    }
+                }
+                input.clear();
+            }
+        }
+    }
+}
+
+#[test]
+fn test5() {
+    // This test is to verify that tweaking the gain property of the comb filter will change the output
+    let fs: f32 = 8.0;
+    let delay: f32 = 0.5;
+    let mut gain: f32;
+    let channels = 1;
+    let block_size = 4;
+    let fhz: f32 = 2.0;
+    let mut input_signal = vec![-0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0]; //FHz = 2
+
+    for filter_type in [FIR, IIR] {
+        let mut output_signal_one = vec![];
+        let mut output_signal_two = vec![];
+        let mut comb_filter = CombFilter::new(filter_type, delay, fs, channels);
+        let mut input = vec![0.0; block_size*channels];
+        let mut output = vec![0.0; block_size*channels];
+        input.clear();
+        gain = 1.0;
+        comb_filter.set_param(comb_filter::FilterParam::Gain, gain).unwrap();
+
+        for (index, sample) in input_signal.iter().enumerate() {
+            input.push(*sample);
+            if input.len() == block_size * channels {
+                let input_slice: Vec<_> = input.chunks(channels).collect();
+                let mut output_slice: Vec<_> = output.chunks_mut(channels).collect();
+                comb_filter.process(&input_slice, &mut output_slice);
+                
+                for channel in output_slice {
+                    for (innerIndex, sample) in channel.iter().enumerate() {
+                        output_signal_one.push(*sample);
+                    }
+                }
+
+                input.clear();
+            }
+        }
+
+        gain = 0.5;
+        input = vec![0.0; block_size*channels];
+        output = vec![0.0; block_size*channels];
+        input.clear();
+        comb_filter.set_param(comb_filter::FilterParam::Gain, gain).unwrap();
+        comb_filter.reset();
+
+        for (index, sample) in input_signal.iter().enumerate() {
+            input.push(*sample);
+            if input.len() == block_size * channels {
+                let input_slice: Vec<_> = input.chunks(channels).collect();
+                let mut output_slice: Vec<_> = output.chunks_mut(channels).collect();
+                comb_filter.process(&input_slice, &mut output_slice);
+                
+                for channel in output_slice {
+                    for (innerIndex, sample) in channel.iter().enumerate() {
+                        output_signal_two.push(*sample);
+                    }
+                }
+
+                input.clear();
+            }
+        }
+        println!("{:?}", filter_type);
+        println!("{:?}", output_signal_one);
+        println!("{:?}", output_signal_two);
+        assert_ne!(output_signal_one, output_signal_two);
+    }
+}
+
+

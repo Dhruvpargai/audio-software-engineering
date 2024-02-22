@@ -37,15 +37,15 @@ impl CombFilter {
             filter_type,
             max_delay_secs,
             sample_rate_hz,
-            gain: 0.5,
-            delay: 0.001,
+            gain: 1.0,
+            delay: 0.5,
             num_channels,
             delay_lines: vec![RingBuffer::<f32>::new(buffer_size); num_channels]
         }
     }
 
     pub fn reset(&mut self) {
-        println!("reset self.delay: {}", self.delay);
+        // println!("reset self.delay: {}", self.delay);
         self.delay_lines = vec![RingBuffer::<f32>::new((self.delay * self.sample_rate_hz) as usize); self.num_channels];
     }
 
