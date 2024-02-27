@@ -79,7 +79,14 @@ impl RingBuffer<f32> {
     // Return the value at at an offset from the current read index.
     // To handle fractional offsets, linearly interpolate between adjacent values. 
     pub fn get_frac(&self, offset: f32) -> f32 {
-        todo!("implement")
+        let fractional = offset.fract();
+        if fractional == 0.0 {
+            self.get(offset as usize)
+        } else {
+            let lower = self.get(offset as usize);
+            let upper = self.get(offset as usize + 1);
+            lower * (1.0 - fractional) + upper * fractional
+        }
     }
 }
 
@@ -195,5 +202,19 @@ mod tests {
         assert_eq!(ring_buffer.get_read_index(), 3);
 
         // NOTE: Negative indices are also weird, but we can't even pass them due to type checking!
+    }
+
+    #[test]
+    fn test_fractional_get() {
+        let mut ring_buffer = RingBuffer::<f32>::new(4);
+        ring_buffer.push(0.2);
+        ring_buffer.push(0.4);
+        ring_buffer.push(0.6);
+        ring_buffer.push(0.8);
+
+        assert_eq!(ring_buffer.get_frac(0.0), 0.2);
+        assert_eq!(ring_buffer.get_frac(1.0), 0.4);
+        assert_eq!(ring_buffer.get_frac(0.5), 0.3);
+        assert_eq!(ring_buffer.get_frac(1.25), 0.45);
     }
 }
