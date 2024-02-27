@@ -80,13 +80,9 @@ impl RingBuffer<f32> {
     // To handle fractional offsets, linearly interpolate between adjacent values. 
     pub fn get_frac(&self, offset: f32) -> f32 {
         let fractional = offset.fract();
-        if fractional == 0.0 {
-            self.get(offset as usize)
-        } else {
-            let lower = self.get(offset as usize);
-            let upper = self.get(offset as usize + 1);
-            lower * (1.0 - fractional) + upper * fractional
-        }
+        let lower = self.get(offset as usize);
+        let upper = self.get(offset as usize + 1);
+        lower * (1.0 - fractional) + upper * fractional
     }
 }
 
