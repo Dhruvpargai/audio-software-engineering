@@ -17,17 +17,33 @@ impl Lfo {
             frequency,
             amplitude,
             fs,
-            buffer // Making a buffer of fs samples i.e. 1 second long. What should this be ideally?
+            buffer
+        }
+    }
+
+    fn reset(&mut self) {
+        self.buffer = RingBuffer::new(self.fs as usize);
+        for i in 0..self.fs as usize {
+            self.buffer.push((2.0 * std::f32::consts::PI * self.frequency * i as f32 / self.fs).sin() * self.amplitude);
         }
     }
 
     pub fn get_samples(&mut self, num_samples: usize) -> Vec<f32> {
-        // // Can this be more optimal?
         let mut samples = Vec::with_capacity(num_samples);
         for _ in 0..num_samples {
-            samples.push(self.buffer.pop() * self.amplitude);
+            samples.push(self.buffer.pop());
         }
         samples
+    }
+
+    pub fn set_frequency(&mut self, frequency: f32) {
+        self.frequency = frequency;
+        self.reset();
+    }
+
+    pub fn set_amplitude(&mut self, amplitude: f32) {
+        self.amplitude = amplitude;
+        self.reset();
     }
 }
 
