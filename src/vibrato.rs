@@ -4,30 +4,33 @@ use crate::lfo::Lfo;
 pub struct Vibrato {
     frequency: f32, // Frequency in Hz
     amplitude: f32, // Depth of the LFO - 0.0 to 1.0
-    sample_rate_hz: f32, // Sample rate in Hz
-    lfo: Lfo,
-    num_channels: usize, 
     delay: usize, // Delay in samples
+    sample_rate_hz: f32, // Sample rate in Hz
+    block_size: usize,
+    num_channels: usize, 
+    lfo: Lfo,
     delay_lines : Vec<RingBuffer::<f32>>,
 }
 
 impl Vibrato {
-    pub fn new(frequency: f32, amplitude: f32, sample_rate_hz: f32, num_channels: usize, delay: f32) -> Self {
-        let lfo = Lfo::new(frequency, amplitude, sample_rate_hz);
+    pub fn new(frequency: f32, amplitude: f32, delay: f32, sample_rate_hz: f32, block_size: usize, num_channels: usize) -> Self {
+        let lfo = Lfo::new(frequency, amplitude, sample_rate_hz, block_size);
         let delay_in_samples = (delay * sample_rate_hz) as usize;
+        let amplitude = amplitude.min(1.0); // Ensure amplitude is between 0 and 1
         Vibrato {
             frequency,
             amplitude,
-            sample_rate_hz,
-            lfo,
-            num_channels,
             delay: delay_in_samples,
+            sample_rate_hz,
+            block_size,
+            num_channels,
+            lfo,
             delay_lines: vec![RingBuffer::<f32>::new((2 * delay_in_samples + 1) * sample_rate_hz as usize); num_channels],
         }
     }
 
-    pub fn process(&mut self, input: &[&[f32]], output: &mut [&mut [f32]], block_size: usize) {
-        let lfo_block = self.lfo.get_samples(block_size);
+    pub fn process(&mut self, input: &[&[f32]], output: &mut [&mut [f32]]) {
+        let lfo_block = self.lfo.get_samples();
         for channel in 0..self.delay_lines.len() {
             for (sample_index, (&input_sample, output_sample)) in input[channel].iter().zip(output[channel].iter_mut()).enumerate() {
                 if self.delay_lines[channel].len() > (2 * self.delay + 1) { 
@@ -76,7 +79,7 @@ mod tests {
         let amplitude: f32 = 1.0;
         let input_signal = vec![-0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0, -0.5, 0.0, 0.5, 0.0]; //FHz = 2
 
-        let mut vibrato = Vibrato::new(fhz, amplitude, fs, channels, delay);
+        let mut vibrato = Vibrato::new(fhz, amplitude, delay, fs, block_size, channels);
         let mut input = vec![0.0; block_size*channels];
         let mut output = vec![0.0; block_size*channels];
         input.clear();

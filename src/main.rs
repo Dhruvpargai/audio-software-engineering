@@ -15,8 +15,8 @@ fn main() {
 
     // Parse command line arguments
     let args: Vec<String> = std::env::args().collect();
-    if args.len() < 5 {
-        eprintln!("Usage: {} <input wave filename> <output text filename> <frequency> <delay>", args[0]);
+    if args.len() < 6 {
+        eprintln!("Usage: {} <input wave filename> <output text filename> <frequency> <amplitude> <delay>", args[0]);
         return
     }
 
@@ -28,8 +28,9 @@ fn main() {
 
     let block_size = 1024;
     let fhz: f32 = args[3].parse().unwrap();
-    let delay: f32 = args[4].parse().unwrap();
-    let mut vibrato = Vibrato::new(fhz, 1.0, sample_rate, channels, delay);
+    let amp: f32 = args[4].parse().unwrap();
+    let delay: f32 = args[5].parse().unwrap();
+    let mut vibrato = Vibrato::new(fhz, amp, delay, sample_rate, block_size, channels);
 
     let out = File::create(&args[2]).expect("Unable to create file");
     let mut writer = hound::WavWriter::new(out, spec).unwrap();
@@ -44,7 +45,7 @@ fn main() {
         if (i % (channels * block_size) == 0) || (i == num_samples - 1) {
             let ins = block.iter().map(|c| c.as_slice()).collect::<Vec<&[f32]>>();
             let mut outs = output_block.iter_mut().map(|c| c.as_mut_slice()).collect::<Vec<&mut [f32]>>();
-            vibrato.process(ins.as_slice(), outs.as_mut_slice(), block_size);
+            vibrato.process(ins.as_slice(), outs.as_mut_slice());
             for j in 0..(channels * block[0].len()) {
                 writer.write_sample((output_block[j % channels][j / channels] * (1 << 15) as f32) as i32).unwrap();
             }
