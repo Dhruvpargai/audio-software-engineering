@@ -30,7 +30,7 @@ fn main() {
     let fhz: f32 = args[3].parse().unwrap();
     let amp: f32 = args[4].parse().unwrap();
     let delay: f32 = args[5].parse().unwrap();
-    let mut vibrato = Vibrato::new(fhz, amp, delay, sample_rate, block_size, channels);
+    let mut vibrato = Vibrato::new(fhz, amp, delay, sample_rate, channels);
 
     let out = File::create(&args[2]).expect("Unable to create file");
     let mut writer = hound::WavWriter::new(out, spec).unwrap();
