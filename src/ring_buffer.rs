@@ -201,17 +201,19 @@ mod tests {
         // NOTE: Negative indices are also weird, but we can't even pass them due to type checking!
     }
 
-    // #[test]
-    // fn test_fractional_get() {
-    //     let mut ring_buffer = RingBuffer::<f32>::new(4);
-    //     ring_buffer.push(0.2);
-    //     ring_buffer.push(0.4);
-    //     ring_buffer.push(0.6);
-    //     ring_buffer.push(0.8);
+    const EPSILON: f32 = 1e-5;
 
-    //     assert_eq!(ring_buffer.get_frac(0.0), 0.2);
-    //     assert_eq!(ring_buffer.get_frac(1.0), 0.4);
-    //     assert_eq!(ring_buffer.get_frac(0.5), 0.3);
-    //     assert_eq!(ring_buffer.get_frac(1.25), 0.45);
-    // }
+    #[test]
+    fn test_fractional_get() {
+        let mut ring_buffer = RingBuffer::<f32>::new(4);
+        ring_buffer.push(0.2);
+        ring_buffer.push(0.4);
+        ring_buffer.push(0.6);
+        ring_buffer.push(0.8);
+
+        assert!(f32::abs(ring_buffer.get_frac(0.0) - 0.2) <= EPSILON);
+        assert!(f32::abs(ring_buffer.get_frac(1.0) - 0.4) <= EPSILON);
+        assert!(f32::abs(ring_buffer.get_frac(0.5) - 0.3) <= EPSILON);
+        assert!(f32::abs(ring_buffer.get_frac(1.25) - 0.45) <= EPSILON);
+    }
 }
