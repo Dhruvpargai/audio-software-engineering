@@ -30,8 +30,8 @@ impl Vibrato {
         let lfo_block = self.lfo.get_samples(block_size);
         for channel in 0..self.delay_lines.len() {
             for (sample_index, (&input_sample, output_sample)) in input[channel].iter().zip(output[channel].iter_mut()).enumerate() {
-                if self.delay_lines[channel].len() >= (2 * self.delay + 1) { 
-                    let offset_index = lfo_block[sample_index] * (2 * self.delay + 1) as f32;
+                if self.delay_lines[channel].len() > (2 * self.delay + 1) { 
+                    let offset_index = lfo_block[sample_index] * (2 * self.delay) as f32;
                     *output_sample = self.delay_lines[channel].get_frac(offset_index);
                     self.delay_lines[channel].pop();
                 } else {

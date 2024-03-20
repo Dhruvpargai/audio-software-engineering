@@ -41,7 +41,7 @@ fn main() {
     for (i, sample) in reader.samples::<i16>().enumerate() {
         let sample = sample.unwrap() as f32 / (1 << 15) as f32;
         block[i % channels].push(sample);
-        if (i % (channels * 1024) == 0) || (i == num_samples - 1) {
+        if (i % (channels * block_size) == 0) || (i == num_samples - 1) {
             let ins = block.iter().map(|c| c.as_slice()).collect::<Vec<&[f32]>>();
             let mut outs = output_block.iter_mut().map(|c| c.as_mut_slice()).collect::<Vec<&mut [f32]>>();
             vibrato.process(ins.as_slice(), outs.as_mut_slice(), block_size);
