@@ -1,13 +1,17 @@
 use crate::ring_buffer::RingBuffer;
 
 pub struct Lfo {
-    frequency: f32, // Frequency in Hz
-    amplitude: f32, // Depth of the LFO - 0  to 1.0
-    fs: f32, // Sample rate in Hz
+    /// Frequency in Hz
+    frequency: f32,
+    /// Depth of the LFO - 0  to 1.0
+    amplitude: f32, 
+    /// Sample rate in Hz
+    fs: f32, 
     buffer: RingBuffer<f32>
 }
 
 impl Lfo {
+    /// Initialize a new LFO with a given frequency(Hz), amplitude(0.0-1.0), and sample rate(Hz)
     pub fn new(frequency: f32, amplitude: f32, fs: f32) -> Self {
         let mut buffer = RingBuffer::new(fs as usize);
         for i in 0..fs as usize {
@@ -21,6 +25,7 @@ impl Lfo {
         }
     }
 
+    /// Reset the LFO to its initial state
     fn reset(&mut self) {
         self.buffer = RingBuffer::new(self.fs as usize);
         for i in 0..self.fs as usize {
@@ -28,6 +33,7 @@ impl Lfo {
         }
     }
 
+    /// Get the next `num_samples` samples from the LFO
     pub fn get_samples(&mut self, num_samples: usize) -> Vec<f32> {
         let mut samples = Vec::with_capacity(num_samples);
         for _ in 0..num_samples {
@@ -36,11 +42,13 @@ impl Lfo {
         samples
     }
 
+    /// Set the frequency(Hz) of the LFO
     pub fn set_frequency(&mut self, frequency: f32) {
         self.frequency = frequency;
         self.reset();
     }
 
+    /// Set the amplitude of the LFO
     pub fn set_amplitude(&mut self, amplitude: f32) {
         self.amplitude = amplitude;
         self.reset();
