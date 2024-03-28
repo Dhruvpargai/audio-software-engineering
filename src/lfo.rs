@@ -58,14 +58,16 @@ impl Lfo {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::Rng;
 
     #[test]
-    fn test_lfo() {
+    fn test_lfo_with_arbitrary_block_size() {
         let fs = 44100.0;
         let frequency = 2.0;
         let amplitude = 1.0;
         let mut lfo = Lfo::new(frequency, amplitude, fs);
-        let block_size = 4409;
+        let mut rng = rand::thread_rng();
+        let block_size = rng.gen_range(1024..4400);
         for block_index in 0..100 {
             let samples = lfo.get_samples(block_size);
             for i in 0..block_size as usize { 
