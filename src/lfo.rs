@@ -2,7 +2,7 @@ use crate::ring_buffer::RingBuffer;
 
 pub struct Lfo {
     frequency: f32, // Frequency in Hz
-    amplitude: f32, // Depth of the LFO - 0  to 100
+    amplitude: f32, // Depth of the LFO - 0  to 1.0
     fs: f32, // Sample rate in Hz
     buffer: RingBuffer<f32>
 }
@@ -51,18 +51,18 @@ impl Lfo {
 mod tests {
     use super::*;
 
-    // #[test]
-    // fn test_lfo() {
-    //     let fs = 44100.0;
-    //     let frequency = 2.0;
-    //     let amplitude = 1.0;
-    //     let mut lfo = Lfo::new(frequency, amplitude, fs);
-    //     let block_size = 4409;
-    //     for block_index in 0..100 {
-    //         let samples = lfo.get_samples(block_size);
-    //         for i in 0..block_size as usize { 
-    //             assert_eq!(samples[i], ((2.0 * std::f32::consts::PI * frequency * ((i + block_index * block_size) % fs as usize) as f32 / fs).sin()  * amplitude / 2.0 + 0.5));
-    //         }
-    //     }
-    // }
+    #[test]
+    fn test_lfo() {
+        let fs = 44100.0;
+        let frequency = 2.0;
+        let amplitude = 1.0;
+        let mut lfo = Lfo::new(frequency, amplitude, fs);
+        let block_size = 4409;
+        for block_index in 0..100 {
+            let samples = lfo.get_samples(block_size);
+            for i in 0..block_size as usize { 
+                assert_eq!(samples[i], ((2.0 * std::f32::consts::PI * frequency * ((i + block_index * block_size) % fs as usize) as f32 / fs).sin()  * amplitude / 2.0 + 0.5));
+            }
+        }
+    }
 }

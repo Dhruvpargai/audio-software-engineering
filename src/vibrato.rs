@@ -1,6 +1,5 @@
 use crate::ring_buffer::RingBuffer;
 use crate::lfo::Lfo;
-// use std::slice::len;
 
 pub struct Vibrato {
     frequency: f32, // Frequency in Hz
@@ -29,7 +28,6 @@ impl Vibrato {
     }
 
     pub fn process(&mut self, input: &[&[f32]], output: &mut [&mut [f32]]) {
-        // Handle edge case - unequal channel lengths for last block 
         let mut max_block_size = 0;
         for channel_index in 0..input.len() {
             max_block_size = max_block_size.max(input[channel_index].len());
@@ -104,10 +102,7 @@ mod tests {
 
         for channel in 0..channels {
             for i in 2 * delay_in_samples..signal_length { // Wait for vibrato to kick in
-                // if (f32::abs(input[channel][i - delay_in_samples] - output[channel][i]) >= EPSILON) {
-                    // println!("{} {} {}", i, input[channel][i - delay_in_samples ], output[channel][i]);
-                    assert!(f32::abs(input[channel][i - delay_in_samples] - output[channel][i]) <= EPSILON);
-                // }
+                assert!(f32::abs(input[channel][i - delay_in_samples] - output[channel][i]) <= EPSILON);
             }
         }
     }
@@ -132,10 +127,7 @@ mod tests {
 
         for channel in 0..channels {
             for i in 2 * delay_in_samples..signal_length { // Wait for vibrato to kick in
-                // if (f32::abs(input[channel][i - delay_in_samples] - output[channel][i]) > EPSILON) {
-                    // println!("{} {} {}", i, input[channel][i], output[channel][i]);
-                    // assert!(f32::abs(input[channel][i] - output[channel][i]) <= EPSILON);
-            // }
+                assert!(f32::abs(input[channel][i] - output[channel][i]) <= EPSILON); // This test fails
             }
         }
     }
@@ -160,10 +152,7 @@ mod tests {
 
         for channel in 0..channels {
             for i in 2 * delay_in_samples..signal_length { // Wait for vibrato to kick in
-                // if (f32::abs(input[channel][i - delay_in_samples] - output[channel][i]) > EPSILON) {
-                    // println!("{} {} {}", i, input[channel][i], output[channel][i]);
-                    assert!(f32::abs(input[channel][i] - output[channel][i]) <= EPSILON);
-            // }
+                assert!(f32::abs(input[channel][i] - output[channel][i]) <= EPSILON);
             }
         }
     }
